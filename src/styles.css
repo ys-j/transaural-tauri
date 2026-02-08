@@ -1,0 +1,180 @@
+:root {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+
+  --color: #0f0f0f;
+  --background-color: #f6f6f6;
+
+  --controls-color: #0f0f0f;
+  --controls-background-color: #ffffff;
+  --controls-active-background-color: #e8e8e8;
+
+  color: var(--color);
+  background-color: var(--background-color);
+}
+
+.container {
+  margin: 0;
+  padding-top: 10vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+h1 {
+  text-align: center;
+}
+
+input,
+select,
+::picker(select) {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: var(--controls-background-color);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+  color: var(--controls-color);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1em;
+  font-weight: 500;
+  outline: none;
+  padding: .6em 1.2em;
+  transition: border-color .25s;
+  
+  &:disabled {
+    cursor: default;
+  }
+}
+
+select,
+::picker(select) {
+  appearance: base-select;
+}
+::picker(select) {
+  cursor: default;
+  padding: 0;
+}
+
+input:focus,
+select:focus {
+  border-color: #396cd8;
+}
+select:active {
+  border-color: #396cd8;
+  background-color: var(--controls-active-background-color);
+}
+
+button.main {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: currentColor;
+  cursor: pointer;
+  margin: 1em auto;
+}
+[data-turn] svg {
+  transition: color .25s, filter .25s;
+}
+[data-turn="off"]:hover svg,
+[data-turn="on"] svg {
+  color: #396cd8;
+  filter: drop-shadow(0 0 1em #396cd8);
+}
+[data-turn="on"]:hover svg {
+  filter: drop-shadow(0 0 .5em var(--color));
+}
+
+form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(640px, 1fr));
+  gap: 1em 2em;
+}
+
+fieldset {
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  margin: 1.5em 0;
+  text-align: left;
+  height: min-content;
+  transition: opacity .25s;
+  &:disabled {
+    opacity: .25;
+    pointer-events: none;
+  }
+}
+fieldset[name="devices"] {
+  display: grid;
+  gap: 2px 16px;
+  grid-template-columns: repeat(auto-fill, 6em minmax(24em, 1fr));
+}
+fieldset[name="positions"] {
+  table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin: 1em auto;
+    th, td {
+      border: 1px solid currentColor;
+      padding: .6em 1.2em;
+      text-align: center;
+    }
+  }
+  input[type="number"] {
+    margin: 0;
+    width: 4.5em;
+  }
+}
+fieldset[name="configs"] {
+  display: grid;
+  align-items: center;
+  gap: 2px 16px;
+  grid-template-columns: repeat(auto-fill, 8em minmax(8em, 1fr));
+}
+
+label[for|="select"],
+label[for|="input"] {
+  padding: calc(1px + .6em) 0;
+  text-align: right;
+}
+
+option {
+  margin: 4px;
+  padding: 6px;
+}
+option::after {
+  content: attr(data-driver);
+  font-size: smaller;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  appearance: none;
+}
+input[type="number"] {
+  margin-right: .5em;
+  text-align: right;
+  width: 2.5em;
+}
+
+figure > svg {
+  display: block;
+  margin: 0 auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color: #f6f6f6;
+    --background-color: #2f2f2f;
+
+    --controls-color: #ffffff;
+    --controls-background-color: #0f0f0f98;
+    --controls-active-background-color: #0f0f0f69;
+  }
+}

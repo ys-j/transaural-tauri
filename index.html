@@ -1,0 +1,93 @@
+<!doctype html>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="/src/styles.css">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tauri App</title>
+<main class="container">
+	<h1>スピーカーでクロストークキャンセルするアプリ</h1>
+	<button class="main" form="form-audio_devices" name="switch" data-turn="off">
+		<svg viewBox="-16 -16 32 32" width="150" height="150">
+			<path d="M0-14v7M6-10A13 13 0 1 1-6-10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+		</svg>
+	</button>
+	<form id="form-audio_devices" name="audio">
+		<fieldset name="devices">
+			<legend>デバイス</legend>
+			<label for="select-input_device">入力</label>
+			<select id="select-input_device" name="input_device"></select>
+			<label for="select-output_device">出力</label>
+			<select id="select-output_device" name="output_device"></select>
+			<label for="input-master_latency">レイテンシ</label>
+			<span><input id="input-master_latency" name="master_latency" type="number" min="40" value="100">ms</span>
+		</fieldset>
+		<fieldset name="positions">
+			<legend>スピーカーの位置 [cm]</legend>
+			<table>
+				<tr>
+					<th>位置</th>
+					<th>X座標 [cm]</th>
+					<th>Y座標 [cm]</th>
+				</tr>
+				<tr>
+					<th>あなた</th>
+					<th><input name="listener_coord_x" type="number" min="-200" max="200" step="1" value="0"></th>
+					<th><input name="listener_coord_y" type="number" min="-200" max="200" step="1" value="0"></th>
+				</tr>
+				<tr>
+					<th>スピーカーL</th>
+					<th><input name="speaker_coord_lx" type="number" min="-200" max="200" step="1" value="-100"></th>
+					<th><input name="speaker_coord_ly" type="number" min="-200" max="200" step="1" value="20"></th>
+				</tr>
+				<tr>
+					<th>スピーカーR</th>
+					<th><input name="speaker_coord_rx" type="number" min="-200" max="200" step="1" value="100"></th>
+					<th><input name="speaker_coord_ry" type="number" min="-200" max="200" step="1" value="20"></th>
+				</tr>
+			</table>
+			<figure>
+				<svg id="svg-positions" viewBox="-200 -200 400 400" width="500" height="500">
+					<defs>
+						<pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+							<rect width="100" height="100" fill="url(#subgrid)" stroke="currentColor" stroke-width="1" />
+						</pattern>
+						<pattern id="subgrid" width="10" height="10" patternUnits="userSpaceOnUse">
+							<rect width="10" height="10" fill="none" stroke="currentColor" stroke-width="0.1" />
+						</pattern>
+					</defs>
+					<g class="bg">
+						<rect x="-500" y="-500" width="1000" height="1000" fill="url(#grid)" />
+						<g fill="currentColor" font-size="12">
+							<text y="-198" text-anchor="middle" dominant-baseline="text-before-edge">Front</text>
+							<text y="198" text-anchor="middle" dominant-baseline="text-after-edge">Back</text>
+							<text x="-197" text-anchor="start" dominant-baseline="text-after-edge">Left</text>
+							<text x="197" text-anchor="end" dominant-baseline="text-after-edge">Right</text>
+						</g>
+					</g>
+					<g>
+						<circle id="listener" r="10" fill="currentColor" />
+						<circle id="speaker_l" r="5" fill="blue" />
+						<circle id="speaker_r" r="5" fill="red" />
+					</g>
+				</svg>
+			</figure>
+		</fieldset>
+		<fieldset name="configs">
+			<legend>詳細設定</legend>
+			<label for="input-interaural">両耳の間隔</label>
+			<span><input id="input-interaural" name="interaural_distance" type="number" min="10" max="30" value="16">cm</span>
+			<label for="input-master_gain">マスターゲイン</label>
+			<span><input id="input-master_gain" name="master_gain" type="number" min="50" max="100" value="75">%</span>
+			<label for="input-attenuation">キャンセル倍率</label>
+			<span><input id="input-attenuation" name="canceling_attenuation" type="number" min="-70" max="70" value="60">%</span>
+			<label for="input-lowpass_cutoff_min">ローパス最小<br>カットオフ</label>
+			<span><input id="input-lowpass_cutoff_min" name="lowpass_cutoff_min" type="number" min="500" max="1200" value="800">Hz</span>
+			<label for="input-highpass_cutoff">ハイパス<br>カットオフ</label>
+			<span><input id="input-highpass_cutoff" name="highpass_cutoff" type="number" min="20" max="1000" value="50">Hz</span>
+			<label for="input-wet_dry">Wet/Dry比</label>
+			<span><input id="input-wet_dry" name="wet_dry" type="number" min="0" max="100" value="100">%</span>
+			<label for="input-temperature">気温</label>
+			<span><input id="input-temperature" name="temperature" type="number" min="-20" max="40" step="0.1" value="20">℃</span>
+		</fieldset>
+	</form>
+</main>
+<script type="module" src="/src/main.ts" defer></script>
