@@ -22,6 +22,8 @@ type InvokeOptions = {
 	attenuation: number,
 	lowpassCutoffMin: number,
 	highpassCutoff: number,
+	lowshelfCutoff: number,
+	lowshelfGain: number,
 	wetDry: number,
 	temperature: number,
 }

@@ -17,6 +17,8 @@ const masterGainInput = form?.["master_gain"] as HTMLInputElement | undefined;
 const attenuationInput = form?.["canceling_attenuation"] as HTMLInputElement | undefined;
 const lowpassCutoffMinInput = form?.["lowpass_cutoff_min"] as HTMLInputElement | undefined;
 const highpassCutoffInput = form?.["highpass_cutoff"] as HTMLInputElement | undefined;
+const lowshelfCutoffInput = form?.["lowshelf_cutoff"] as HTMLInputElement | undefined;
+const lowshelfGainInput = form?.["lowshelf_gain"] as HTMLInputElement | undefined;
 const wetDryInput = form?.["wet_dry"] as HTMLInputElement | undefined;
 const temperatureInput = form?.["temperature"] as HTMLInputElement | undefined;
 
@@ -110,6 +112,8 @@ function saveConfig() {
 		attenuation: (attenuationInput?.valueAsNumber ?? 70) / 100,
 		lowpassCutoffMin: lowpassCutoffMinInput?.valueAsNumber ?? 800,
 		highpassCutoff: highpassCutoffInput?.valueAsNumber ?? 50,
+		lowshelfCutoff: lowshelfCutoffInput?.valueAsNumber ?? 200,
+		lowshelfGain: lowshelfGainInput?.valueAsNumber ?? 3,
 		wetDry: (wetDryInput?.valueAsNumber ?? 100) / 100,
 		temperature: temperatureInput?.valueAsNumber ?? 20,
 	};
@@ -143,6 +147,8 @@ function restoreConfig() {
 	if (masterGainInput) masterGainInput.valueAsNumber = (options.masterGain * 100) | 0;
 	if (attenuationInput) attenuationInput.valueAsNumber = (options.attenuation * 100) | 0;
 	if (highpassCutoffInput) highpassCutoffInput.valueAsNumber = options.highpassCutoff;
+	if (lowshelfCutoffInput) lowshelfCutoffInput.valueAsNumber = options.lowshelfCutoff;
+	if (lowshelfGainInput) lowshelfGainInput.valueAsNumber = options.lowshelfGain;
 	if (wetDryInput) wetDryInput.valueAsNumber = (options.wetDry * 100) | 0;
 	if (temperatureInput) temperatureInput.valueAsNumber = options.temperature;
 }

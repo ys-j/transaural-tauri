@@ -49,6 +49,8 @@ struct ThruOpt<'a> {
     attenuation: f32,
     lowpass_cutoff_min: f32,
     highpass_cutoff: f32,
+    lowshelf_cutoff: f32,
+    lowshelf_gain: f32,
     wet_dry: f32,
     temperature: f32,
 }
@@ -96,6 +98,8 @@ fn set_audio_devices(
     attenuation: f32,
     lowpass_cutoff_min: f32,
     highpass_cutoff: f32,
+    lowshelf_cutoff: f32,
+    lowshelf_gain: f32,
     wet_dry: f32,
     temperature: f32,
 ) -> Result<(), ()> {
@@ -120,6 +124,8 @@ fn set_audio_devices(
             attenuation,
             lowpass_cutoff_min,
             highpass_cutoff,
+            lowshelf_cutoff,
+            lowshelf_gain,
             wet_dry,
             temperature,
         };
@@ -168,7 +174,7 @@ where
 
     let distances = calc_distance(&opt.position);
     let min_distance = distances.into_iter().reduce(f32::min).unwrap();
-    let amp_factors = distances.map(|d| min_distance / d);
+    let amp_factors = distances.map(|d| (min_distance / d).powf(1.2));
     let delays = calc_delay_frames(
         sample_rate as f32,
         distances,
@@ -180,7 +186,14 @@ where
     let shadow_cutoff_l = calc_shadow_cutoff(listenr_pos, opt.position.left_speaker, opt.lowpass_cutoff_min);
     let shadow_cutoff_r = calc_shadow_cutoff(listenr_pos, opt.position.right_speaker, opt.lowpass_cutoff_min);
 
-    let mut engine = CtcEngine::new(sample_rate, delays, [shadow_cutoff_l, shadow_cutoff_r], opt.highpass_cutoff);
+    let mut engine = CtcEngine::new(
+        sample_rate,
+        delays,
+        [shadow_cutoff_l, shadow_cutoff_r],
+        opt.highpass_cutoff,
+        opt.lowshelf_cutoff,
+        opt.lowshelf_gain,
+    );
 
     let mut ctc_sig = signal::from_iter(std::iter::from_fn(move || {
         if cons.occupied_len() < 2 { return None; }

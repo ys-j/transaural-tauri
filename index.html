@@ -18,7 +18,7 @@
 			<label for="select-output_device">出力</label>
 			<select id="select-output_device" name="output_device"></select>
 			<label for="input-master_latency">レイテンシ</label>
-			<span><input id="input-master_latency" name="master_latency" type="number" min="40" value="100">ms</span>
+			<span><input id="input-master_latency" name="master_latency" type="number" min="40" value="100" required>ms</span>
 		</fieldset>
 		<fieldset name="positions">
 			<legend>スピーカーの位置 [cm]</legend>
@@ -30,18 +30,18 @@
 				</tr>
 				<tr>
 					<th>あなた</th>
-					<th><input name="listener_coord_x" type="number" min="-200" max="200" step="1" value="0"></th>
-					<th><input name="listener_coord_y" type="number" min="-200" max="200" step="1" value="0"></th>
+					<th><input name="listener_coord_x" type="number" min="-200" max="200" step="1" value="0" required></th>
+					<th><input name="listener_coord_y" type="number" min="-200" max="200" step="1" value="0" required></th>
 				</tr>
 				<tr>
 					<th>スピーカーL</th>
-					<th><input name="speaker_coord_lx" type="number" min="-200" max="200" step="1" value="-100"></th>
-					<th><input name="speaker_coord_ly" type="number" min="-200" max="200" step="1" value="20"></th>
+					<th><input name="speaker_coord_lx" type="number" min="-200" max="200" step="1" value="-100" required></th>
+					<th><input name="speaker_coord_ly" type="number" min="-200" max="200" step="1" value="20" required></th>
 				</tr>
 				<tr>
 					<th>スピーカーR</th>
-					<th><input name="speaker_coord_rx" type="number" min="-200" max="200" step="1" value="100"></th>
-					<th><input name="speaker_coord_ry" type="number" min="-200" max="200" step="1" value="20"></th>
+					<th><input name="speaker_coord_rx" type="number" min="-200" max="200" step="1" value="100" required></th>
+					<th><input name="speaker_coord_ry" type="number" min="-200" max="200" step="1" value="20" required></th>
 				</tr>
 			</table>
 			<figure>
@@ -74,19 +74,23 @@
 		<fieldset name="configs">
 			<legend>詳細設定</legend>
 			<label for="input-interaural">両耳の間隔</label>
-			<span><input id="input-interaural" name="interaural_distance" type="number" min="10" max="30" value="16">cm</span>
+			<span><input id="input-interaural" name="interaural_distance" type="number" min="10" max="30" value="16" required>cm</span>
 			<label for="input-master_gain">マスターゲイン</label>
-			<span><input id="input-master_gain" name="master_gain" type="number" min="50" max="100" value="75">%</span>
+			<span><input id="input-master_gain" name="master_gain" type="number" min="50" max="100" value="75" required>%</span>
 			<label for="input-attenuation">キャンセル倍率</label>
-			<span><input id="input-attenuation" name="canceling_attenuation" type="number" min="-70" max="70" value="60">%</span>
+			<span><input id="input-attenuation" name="canceling_attenuation" type="number" min="-70" max="70" value="60" required>%</span>
 			<label for="input-lowpass_cutoff_min">ローパス最小<br>カットオフ</label>
-			<span><input id="input-lowpass_cutoff_min" name="lowpass_cutoff_min" type="number" min="500" max="1200" value="800">Hz</span>
+			<span><input id="input-lowpass_cutoff_min" name="lowpass_cutoff_min" type="number" min="800" max="4000" value="1500" required>Hz</span>
 			<label for="input-highpass_cutoff">ハイパス<br>カットオフ</label>
-			<span><input id="input-highpass_cutoff" name="highpass_cutoff" type="number" min="20" max="1000" value="50">Hz</span>
+			<span><input id="input-highpass_cutoff" name="highpass_cutoff" type="number" min="20" max="800" value="50" required>Hz</span>
+			<label for="input-lowshelf_cutoff">ローシェルフ<br>カットオフ</label>
+			<span><input id="input-lowshelf_cutoff" name="lowshelf_cutoff" type="number" min="20" max="500" value="200" required>Hz</span>
+			<label for="input-lowshelf_gain">ローシェルフ<br>ゲイン</label>
+			<span><input id="input-lowshelf_gain" name="lowshelf_gain" type="number" min="0" max="6" step="0.1" value="3.0" required>dB</span>
 			<label for="input-wet_dry">Wet/Dry比</label>
-			<span><input id="input-wet_dry" name="wet_dry" type="number" min="0" max="100" value="100">%</span>
+			<span><input id="input-wet_dry" name="wet_dry" type="number" min="0" max="100" value="100" required>%</span>
 			<label for="input-temperature">気温</label>
-			<span><input id="input-temperature" name="temperature" type="number" min="-20" max="40" step="0.1" value="20">℃</span>
+			<span><input id="input-temperature" name="temperature" type="number" min="-20" max="40" step="0.1" value="20" required>℃</span>
 		</fieldset>
 	</form>
 </main>
