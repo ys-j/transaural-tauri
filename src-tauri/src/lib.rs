@@ -1,7 +1,7 @@
 use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 
 use cpal::{FromSample, Sample, traits::{DeviceTrait, HostTrait, StreamTrait}};
-use dasp::{Signal, signal, ring_buffer};
+use dasp::{Signal, signal};
 use ringbuf::traits::{Consumer, Observer, Producer, Split};
 use tauri::Emitter;
 
@@ -174,13 +174,13 @@ where
 
     let distances = calc_distance(&opt.position);
     let min_distance = distances.into_iter().reduce(f32::min).unwrap();
-    let amp_factors = distances.map(|d| (min_distance / d).powf(1.2));
-    let delays = calc_delay_frames(
+    let amp_factors = distances.map(|d| (min_distance / d).powf(1.2) as f64);
+    let [main_delays, ct_delays] = calc_delay_frames(
         sample_rate as f32,
         distances,
         calc_speed_of_sound(opt.temperature)
     );
-    println!("Delay L/R are {}/{} frames.", delays[0], delays[1]);
+    println!("Delay L/R are {}/{} frames.", ct_delays[0], ct_delays[1]);
 
     let listenr_pos: [f32; 2] = opt.position.left_ear.iter().zip(opt.position.right_ear).map(|(a, b)| a + b).collect::<Vec<f32>>().try_into().unwrap();
     let shadow_cutoff_l = calc_shadow_cutoff(listenr_pos, opt.position.left_speaker, opt.lowpass_cutoff_min);
@@ -188,7 +188,8 @@ where
 
     let mut engine = CtcEngine::new(
         sample_rate,
-        delays,
+        ct_delays,
+        main_delays,
         [shadow_cutoff_l, shadow_cutoff_r],
         opt.highpass_cutoff,
         opt.lowshelf_cutoff,
@@ -201,7 +202,7 @@ where
         let r  = cons.try_pop()? * opt.master_gain;
         Some([l, r])
     })).map(move |[l, r]| {
-        let [out_l, out_r] = engine.process([l, r], opt.attenuation, &amp_factors);
+        let [out_l, out_r] = engine.process([l, r], opt.attenuation as f64, &amp_factors);
         let w = &opt.wet_dry;
         let d = 1.0 - &opt.wet_dry;
         [ out_l * w + l * d, out_r * w + r * d ]
@@ -251,18 +252,19 @@ fn calc_distance(pos: &PositionCoords) -> [f32; 4] {
     ]
 }
 
-fn calc_delay_frames(sample_rate: f32, distances: [f32; 4], speed_of_sound: f32) -> [usize; 2] {
-    let k = sample_rate / speed_of_sound;
-    let [ls2le, ls2re, rs2le, rs2re] = distances.map(|d| d * k);
+fn calc_delay_frames(sample_rate: f32, distances: [f32; 4], speed_of_sound: f64) -> [[f64; 2]; 2] {
+    let k = sample_rate as f64 / speed_of_sound;
+    let [ls2le, ls2re, rs2le, rs2re] = distances.map(|d| d as f64 * k);
+    let main_delays = if ls2le > rs2re { [ 0.0, ls2le - rs2re ] } else { [ rs2re - ls2le, 0.0 ] };
     [
-        1.max((rs2le - ls2le).abs().round() as usize),
-        1.max((ls2re - rs2re).abs().round() as usize),
+        main_delays,
+        [ 1.0f64.max((rs2le - ls2le).abs()), 1.0f64.max((ls2re - rs2re).abs()) ]
     ]
 }
 
-fn calc_speed_of_sound(t_c: f32) -> f32 {
+fn calc_speed_of_sound(t_c: f32) -> f64 {
     let t_k = 273.15 + t_c;
-    (1.403 * 8.314462 * t_k / 28.966e-3).sqrt()
+    (1.403 * 8.314462 * t_k as f64 / 28.966e-3).sqrt()
 }
 
 fn calc_shadow_cutoff(coord1: [f32; 2], coord2: [f32; 2], cutoff_min: f32) -> f32 {

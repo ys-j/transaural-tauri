@@ -1,72 +1,111 @@
-use crate::{filter::{Processable, PrimaryFilter, BiquadFilter}, ring_buffer::Fixed};
+use crate::filter::{Processable, PrimaryFilter, BiquadFilter};
 
 pub struct CtcEngine {
     filter_a_l: Vec<PrimaryFilter>,
     filter_a_r: Vec<PrimaryFilter>,
     filter_b_l: Vec<PrimaryFilter>,
     filter_b_r: Vec<PrimaryFilter>,
-    rb_l_90: Fixed<Vec<f32>>,
-    rb_r_90: Fixed<Vec<f32>>,
-    rb_l_idx: usize,
-    rb_r_idx: usize,
+    rb_l_0: [f64; 512],
+    rb_r_0: [f64; 512],
+    rb_idx: usize,
+    main_delay_l: f64,
+    main_delay_r: f64,
+    rb_l_90: [f64; 512],
+    rb_r_90: [f64; 512],
     low_pass_l: BiquadFilter,
     low_pass_r: BiquadFilter,
     high_pass_l: BiquadFilter,
     high_pass_r: BiquadFilter,
     low_shelf_l: BiquadFilter,
     low_shelf_r: BiquadFilter,
-    delay_l: usize,
-    delay_r: usize,
+    ct_delay_l: f64,
+    ct_delay_r: f64,
 }
 
 impl CtcEngine {
-    pub fn new(sample_rate: f32, delay: [usize; 2], lp_cutoffs: [f32; 2], hp_cutoff: f32, ls_cutoff: f32, ls_gain: f32) -> Self {
+    pub fn new(
+        sample_rate: f32,
+        ct_delays: [f64; 2],
+        main_delays: [f64; 2],
+        lp_cutoffs: [f32; 2],
+        hp_cutoff: f32,
+        ls_cutoff: f32,
+        ls_gain: f32
+    ) -> Self {
         let (coeffs_a, coeffs_b) = calc_allpass_coeffs(sample_rate);
+        println!("{:?}", main_delays);
         Self {
             filter_a_l: coeffs_a.iter().map(|&a| PrimaryFilter::all_pass(a)).collect(),
             filter_a_r: coeffs_a.iter().map(|&a| PrimaryFilter::all_pass(a)).collect(),
             filter_b_l: coeffs_b.iter().map(|&b| PrimaryFilter::all_pass(b)).collect(),
             filter_b_r: coeffs_b.iter().map(|&b| PrimaryFilter::all_pass(b)).collect(),
-            rb_l_90: Fixed::from(vec![0.0; delay[0]]),
-            rb_r_90: Fixed::from(vec![0.0; delay[1]]),
-            rb_l_idx: 0,
-            rb_r_idx: 0,
+            rb_l_0: [0.0; 512],
+            rb_r_0: [0.0; 512],
+            rb_idx: 0,
+            main_delay_l: main_delays[0],
+            main_delay_r: main_delays[1],
+            rb_l_90: [0.0; 512],
+            rb_r_90: [0.0; 512],
             low_pass_l: BiquadFilter::low_pass(sample_rate, lp_cutoffs[0]),
             low_pass_r: BiquadFilter::low_pass(sample_rate, lp_cutoffs[1]),
             high_pass_l: BiquadFilter::high_pass(sample_rate, hp_cutoff),
             high_pass_r: BiquadFilter::high_pass(sample_rate, hp_cutoff),
             low_shelf_l: BiquadFilter::low_shelf(sample_rate, ls_cutoff, ls_gain),
             low_shelf_r: BiquadFilter::low_shelf(sample_rate, ls_cutoff, ls_gain),
-            delay_l: delay[0],
-            delay_r: delay[1],
+            ct_delay_l: ct_delays[0],
+            ct_delay_r: ct_delays[1],
+        }
+    }
+
+    #[inline(always)]
+    fn get_interpolated(&self, buffer: &[f64], current_idx: usize, delay: f64) -> f64 {
+        let read_pos = current_idx as f64 - delay;
+        
+        let pos_floor = read_pos.floor();
+        let idx_a = (pos_floor as i64).rem_euclid(512i64) as usize;
+        let idx_b = (idx_a + 1) & 511;
+
+        let frac = read_pos- pos_floor;
+
+        unsafe {
+            let val_a = *buffer.get_unchecked(idx_a);
+            let val_b = *buffer.get_unchecked(idx_b);
+            val_a + frac * (val_b - val_a)
         }
     }
     
-    pub fn process(&mut self, [l, r]: [f32; 2], attenuation: f32, amp_factors: &[f32; 4]) -> [f32; 2] {
-        let fold_fn = |acc: f32, f: &mut PrimaryFilter| f.process(acc);
+    pub fn process(&mut self, [l, r]: [f32; 2], attenuation: f64, amp_factors: &[f64; 4]) -> [f32; 2] {
+        let fold_fn = |acc: f64, f: &mut PrimaryFilter| f.process(acc);
 
-        let l_0 = self.filter_a_l.iter_mut().fold(l, fold_fn);
-        let r_0 = self.filter_a_r.iter_mut().fold(r, fold_fn);
+        let l_in = l as f64;
+        let r_in = r as f64;
 
-        let ct_l_90 = self.low_pass_l.process(self.rb_l_90[self.rb_l_idx]);
-        let ct_r_90 = self.low_pass_r.process(self.rb_r_90[self.rb_r_idx]);
+        let l_0 = self.filter_a_l.iter_mut().fold(l_in, fold_fn);
+        let r_0 = self.filter_a_r.iter_mut().fold(r_in, fold_fn);
+
+        let ct_l_90_delayed = self.get_interpolated(&self.rb_l_90, self.rb_idx, self.ct_delay_l);
+        let ct_r_90_delayed = self.get_interpolated(&self.rb_r_90, self.rb_idx, self.ct_delay_r);
+
+        let ct_l_90 = self.low_pass_l.process(ct_l_90_delayed);
+        let ct_r_90 = self.low_pass_r.process(ct_r_90_delayed);
 
         let res_l = l_0 * amp_factors[0] - ct_r_90 * attenuation * amp_factors[2];
         let res_r = r_0 * amp_factors[3] - ct_l_90 * attenuation * amp_factors[1];
 
-        let out_l = self.low_shelf_l.process(res_l).clamp(-1.0, 1.0);
-        let out_r = self.low_shelf_r.process(res_r).clamp(-1.0, 1.0);
+        self.rb_l_0[self.rb_idx] = self.low_shelf_l.process(res_l);
+        self.rb_r_0[self.rb_idx] = self.low_shelf_r.process(res_r);
 
-        let fb_l_90 = self.filter_b_l.iter_mut().fold(l, fold_fn); // res_lは再帰型
-        let fb_r_90 = self.filter_b_r.iter_mut().fold(r, fold_fn); // res_rは再帰型
-        
-        self.rb_l_90[self.rb_l_idx] = self.high_pass_l.process(fb_l_90);
-        self.rb_r_90[self.rb_r_idx] = self.high_pass_r.process(fb_r_90);
+        let out_l = self.get_interpolated(&self.rb_l_0, self.rb_idx, self.main_delay_l);
+        let out_r = self.get_interpolated(&self.rb_r_0, self.rb_idx, self.main_delay_r);
 
-        self.rb_l_idx = (self.rb_l_idx + 1) % self.delay_l;
-        self.rb_r_idx = (self.rb_r_idx + 1) % self.delay_r;
+        let fb_l_90 = self.filter_b_l.iter_mut().fold(l_in, fold_fn); // res_lは再帰型
+        let fb_r_90 = self.filter_b_r.iter_mut().fold(r_in, fold_fn); // res_rは再帰型
+        self.rb_l_90[self.rb_idx] = self.high_pass_l.process(fb_l_90);
+        self.rb_r_90[self.rb_idx] = self.high_pass_r.process(fb_r_90);
 
-        [ out_l, out_r ]
+        self.rb_idx = (self.rb_idx + 1) % 512;
+
+        [ out_l.clamp(-1.0, 1.0) as f32, out_r.clamp(-1.0, 1.0) as f32 ]
     }
 }
 

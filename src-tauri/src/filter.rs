@@ -7,7 +7,7 @@ pub enum PrimaryFilterType {
 }
 
 pub trait Processable {
-    fn process(&mut self, input: f32) -> f32;
+    fn process(&mut self, input: f64) -> f64;
 }
 
 pub struct PrimaryFilter {
@@ -53,22 +53,21 @@ impl PrimaryFilter {
 }
 
 impl Processable for PrimaryFilter {
-    fn process(&mut self, input: f32) -> f32 {
-        let in64 = input as f64;
+    fn process(&mut self, input: f64) -> f64 {
         let out64 = match self.filter_type {
             PrimaryFilterType::AllPass => {
-                self.alpha * in64 + self.prev_in - self.alpha * self.prev_out
+                self.alpha * input + self.prev_in - self.alpha * self.prev_out
             }
             PrimaryFilterType::HighPass => {
-                self.alpha * (self.prev_out + in64 - self.prev_in)
+                self.alpha * (self.prev_out + input - self.prev_in)
             }
             PrimaryFilterType::LowPass => {
-                self.prev_out + self.alpha * (in64 - self.prev_out)
+                self.prev_out + self.alpha * (input - self.prev_out)
             }
         };
-        self.prev_in = in64;
+        self.prev_in = input;
         self.prev_out = out64;
-        out64 as f32
+        out64
     }
 }
 
@@ -144,15 +143,14 @@ impl BiquadFilter {
 }
 
 impl Processable for BiquadFilter {
-    fn process(&mut self, input: f32) -> f32 {
-        let in64 = input as f64;
-        let out64 = self.b0 * in64 + self.z1;
+    fn process(&mut self, input: f64) -> f64 {
+        let output = self.b0 * input + self.z1;
 
-        if out64.is_finite() {
-            self.z1 = self.b1 * in64 - self.a1 * out64 + self.z2;
-            self.z2 = self.b2 * in64 - self.a2 * out64;
-            if out64.abs() < f64::EPSILON { 0.0 }
-            else { out64 as f32 }
+        if output.is_finite() {
+            self.z1 = self.b1 * input - self.a1 * output + self.z2;
+            self.z2 = self.b2 * input - self.a2 * output;
+            if output.abs() < f64::EPSILON { 0.0 }
+            else { output }
         } else {
             self.z1 = 0.0;
             self.z2 = 0.0;
